@@ -1,4 +1,5 @@
 class Board
+  LINES = 
   attr_accessor :cells
 
   def initialize
@@ -41,7 +42,7 @@ class Play < Board
       request_choice(type, player)
     else
       choose_cell(@board_number, type)
-      check_result
+      check_result(player)
     end
   end
 
@@ -50,10 +51,11 @@ class Play < Board
     create_board
   end
 
-  def check_result
+  def check_result(player)
+    p @cells
     if @cells[0] == 'X' && @cells[1] == 'X' && @cells[2] == 'X'
-      puts 'Player 1 wins!'
-      exit
+      puts "#{player} wins!"
+      play_again
     end
   end
 end
@@ -68,18 +70,34 @@ class Game < Play
     play_game(goes_first, goes_second)
   end
 
+  def play_again
+    puts 'Would you like to play again? (Y/N)'
+    yes_or_no = gets.chomp
+    case yes_or_no
+    when 'Y', 'y' then play_intro
+    when 'N', 'n' then exit
+    else play_again_invalid
+    end
+  end
+
+  def play_again_invalid
+    puts 'Please enter either Y or N.'
+    play_again
+  end
+
   def play_game(first, second)
-    4.times do
+    until @cells.any? { |number| (1..9).include?(number) } == false
       request_choice(first, 'Player 1')
       request_choice(second, 'Player 2')
+      request_choice(first, 'Player 1') # in the case of a draw, player 1 will always play last
     end
+    puts "It's a draw!"
+    play_again
   end
 end
 
 game = Game.new
 game.play_intro
-
-
 
 # winning combinations (horizontal): (0, 1, 2), (3, 4, 5), (6, 7, 8)
 # winning combinations (vertical):   (0, 3, 6), (1, 4, 7), (2, 5, 8)
