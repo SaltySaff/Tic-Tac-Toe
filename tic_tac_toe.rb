@@ -1,5 +1,5 @@
 class Board
-  COMBINATIONS = [[0, 1, 2], [3, 4, 5], [6, 7, 8]].freeze
+  COMBINATIONS = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]].freeze
   attr_accessor :cells
 
   def initialize
@@ -7,6 +7,7 @@ class Board
   end
 
   def create_board
+    sleep(0.25)
     puts '-------------'
     puts "| #{@cells[0]} | #{@cells[1]} | #{@cells[2]} |"
     puts '-------------'
@@ -24,6 +25,7 @@ class Play < Board
   end
 
   def check_valid
+    sleep(0.5)
     if @cells[@board_number - 1] == 'X' || @cells[@board_number - 1] == 'O'
       puts 'This cell has already been chosen, please choose an available cell.'
       false
@@ -36,9 +38,11 @@ class Play < Board
   end
 
   def request_choice(type, player)
-    puts "#{player}, please choose the number to place your next #{type}"
+    sleep(0.25)
+    puts "#{player}, please choose a number to place your next #{type}."
     @board_number = gets.chomp.to_i
     if check_valid == false
+      sleep(0.5)
       request_choice(type, player)
     else
       choose_cell(@board_number, type)
@@ -52,11 +56,9 @@ class Play < Board
   end
 
   def check_result(player)
-    result = COMBINATIONS.any? do |i|
-      i.all? { |number| @cells[number] == 'O' }
-      i.all? { |number| @cells[number] == 'X' }
-    end
-    if result == true
+    all_x = COMBINATIONS.any? { |i| i.all? { |number| @cells[number] == 'X' }}
+    all_o = COMBINATIONS.any? { |i| i.all? { |number| @cells[number] == 'O' }}
+    if all_x == true || all_o == true
       puts "#{player} wins!"
       play_again
     end
@@ -65,12 +67,11 @@ end
 
 class Game < Play
   def play_intro
-    puts 'Welcome to Tic-Tac-Toe! Player 1, please choose either O or X'
-    goes_first = gets.chomp
-    goes_second = goes_first == 'X' ? 'O' : 'X'
-    puts "Player 2, you will be #{goes_second} for this game."
-    create_board
-    play_game(goes_first, goes_second)
+    sleep(0.2)
+    @cells = [1, 2, 3, 4, 5, 6, 7, 8, 9] # reintialize cells for a new game
+    puts 'Welcome to Tic-Tac-Toe!'
+    sleep(1)
+    decide_players
   end
 
   def play_again
@@ -88,11 +89,30 @@ class Game < Play
     play_again
   end
 
+  def x_or_o_invalid(choice)
+    unless choice == 'O' || choice == 'X'
+      puts 'Please enter either O or X.'
+      decide_players
+    end
+  end
+
+  def decide_players
+    puts 'Player 1, please choose either O or X.'
+    goes_first = gets.chomp
+    x_or_o_invalid(goes_first)
+    goes_second = goes_first == 'X' ? 'O' : 'X'
+    sleep(0.5)
+    puts "Player 2, you will be #{goes_second} for this game."
+    create_board
+    play_game(goes_first, goes_second)
+  end
+
   def play_game(first, second)
-    until @cells.any? { |number| (1..9).include?(number) } == false
+    5.times do
       request_choice(first, 'Player 1')
-      request_choice(second, 'Player 2')
-      request_choice(first, 'Player 1') # in the case of a draw, player 1 will always play last
+      if @cells.any? { |number| (1..9).include?(number) } == true # keep on playing until @cells contains no numbers
+        request_choice(second, 'Player 2')
+      end
     end
     puts "It's a draw!"
     play_again
