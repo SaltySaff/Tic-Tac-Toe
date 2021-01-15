@@ -1,9 +1,13 @@
-combinations = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
+COMBINATIONS = [[0, 1, 2], [3, 4, 5], [6, 7, 8]].freeze
 
-test = ['O', 'O', 'O', 4, 5, 6, 7, 8, 9]
+test = ['X', 'O', 'X', 'O', 5, 6, 'X', 'O', 'X']
 
-combinations.any? do |i|
-  i.all? { |number| test[number] == 'O' }
+result = COMBINATIONS.any? do |i|
+  i.all? { |element| test[element] == 'X' }
 end
-
+p result
 # use a combination of .any .all
+
+test_two = ['X', 1, 2]
+
+(test_two.any? { |element| element == 'X' })

@@ -1,5 +1,5 @@
 class Board
-  LINES = 
+  COMBINATIONS = [[0, 1, 2], [3, 4, 5], [6, 7, 8]].freeze
   attr_accessor :cells
 
   def initialize
@@ -52,8 +52,11 @@ class Play < Board
   end
 
   def check_result(player)
-    p @cells
-    if @cells[0] == 'X' && @cells[1] == 'X' && @cells[2] == 'X'
+    result = COMBINATIONS.any? do |i|
+      i.all? { |number| @cells[number] == 'O' }
+      i.all? { |number| @cells[number] == 'X' }
+    end
+    if result == true
       puts "#{player} wins!"
       play_again
     end
@@ -102,3 +105,5 @@ game.play_intro
 # winning combinations (horizontal): (0, 1, 2), (3, 4, 5), (6, 7, 8)
 # winning combinations (vertical):   (0, 3, 6), (1, 4, 7), (2, 5, 8)
 # winning combinations (diagonal):   (0, 4, 8), (2, 4, 6)
+
+# NOTE: look into play_again, and how the game calculates a draw
