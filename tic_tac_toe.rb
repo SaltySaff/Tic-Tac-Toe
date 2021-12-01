@@ -1,129 +1,159 @@
+# frozen_string_literal: true
+
+# controls the tic-tac-toe board, including editing it and checking for victory
 class Board
-  COMBINATIONS = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]].freeze
-  attr_accessor :cells
+  attr_reader :cells
+
+  COMBINATIONS = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 4, 7], [2, 5, 8], [3, 6, 9], [1, 5, 9], [3, 5, 7]].freeze
 
   def initialize
     @cells = [1, 2, 3, 4, 5, 6, 7, 8, 9]
   end
 
-  def create_board
-    sleep(0.25)
+  def display_board
     puts '-------------'
-    puts "| #{@cells[0]} | #{@cells[1]} | #{@cells[2]} |"
+    puts "| #{cells[0]} | #{cells[1]} | #{cells[2]} |"
     puts '-------------'
-    puts "| #{@cells[3]} | #{@cells[4]} | #{@cells[5]} |"
+    puts "| #{cells[3]} | #{cells[4]} | #{cells[5]} |"
     puts '-------------'
-    puts "| #{@cells[6]} | #{@cells[7]} | #{@cells[8]} |"
+    puts "| #{cells[6]} | #{cells[7]} | #{cells[8]} |"
     puts '-------------'
+  end
+
+  def modify_board(element, value)
+    @cells[element - 1] = value
+  end
+
+  def someone_won?
+    all_x = COMBINATIONS.any? { |combo| combo.all? { |index| @cells[index - 1] == 'X' } }
+    all_o = COMBINATIONS.any? { |combo| combo.all? { |index| @cells[index - 1] == 'O' } }
+    all_o || all_x == true ? true : false
+  end
+
+  def check_valid?(value)
+    (1..9).include?(value.to_i)
+  end
+
+  def board_full?
+    @cells.all? { |elements| elements == "X" || elements == "O" }
   end
 end
 
-class Play < Board
+# creates and modifies players
+class Player
+  attr_accessor :name, :choice
+
+  def initialize(name)
+    @name = name
+    @choice = ''
+  end
+
+  def create_player
+    puts "#{@name}, please enter your name."
+    @name = gets.chomp
+  end
+
+  def player_selection
+    until @choice == 'X' || @choice == 'O'
+      puts "#{@name} would you like to be noughts, or crosses? (X/O)"
+      @choice = gets.chomp.upcase
+    end
+  end
+end
+
+# controls flow of game
+class Game
   def initialize
-    super
-    @board_number = 0
+    @board = Board.new
+    @player_one = Player.new('Player One')
+    @player_two = Player.new('Player Two')
+    @active_player = @player_one
   end
 
-  def check_valid
-    sleep(0.5)
-    if @cells[@board_number - 1] == 'X' || @cells[@board_number - 1] == 'O'
-      puts 'This cell has already been chosen, please choose an available cell.'
-      false
-    elsif @board_number > 9 || @board_number < 1
-      puts 'Please choose a number between 1 and 9.'
-      false
-    else
-      true
-    end
+  def reset
+    @board = Board.new
+    clear_screen
+    start_game
   end
 
-  def request_choice(type, player)
-    sleep(0.25)
-    puts "#{player}, please choose a number to place your next #{type}."
-    @board_number = gets.chomp.to_i
-    if check_valid == false
-      sleep(0.5)
-      request_choice(type, player)
-    else
-      choose_cell(@board_number, type)
-      check_result(player)
-    end
-  end
-
-  def choose_cell(number, type)
-    @cells[number - 1] = type
-    create_board
-  end
-
-  def check_result(player)
-    all_x = COMBINATIONS.any? { |i| i.all? { |number| @cells[number] == 'X' }}
-    all_o = COMBINATIONS.any? { |i| i.all? { |number| @cells[number] == 'O' }}
-    if all_x == true || all_o == true
-      puts "#{player} wins!"
-      play_again
-    end
-  end
-end
-
-class Game < Play
-  def play_intro
-    sleep(0.2)
-    @cells = [1, 2, 3, 4, 5, 6, 7, 8, 9] # reintialize cells for a new game
+  def start_game
     puts 'Welcome to Tic-Tac-Toe!'
-    sleep(1)
-    decide_players
+    player_setup
+    play_game
   end
 
-  def play_again
+  def play_game
+    @board.display_board
+    request_input(@active_player)
+    play_game
+  end
+
+  def player_setup
+    @player_one.create_player
+    @player_two.create_player
+    clear_screen
+    @player_one.player_selection
+    clear_screen
+    @player_two.choice = @player_one.choice == 'O' ? 'X' : 'O'
+    puts "#{@player_one.name} is #{@player_one.choice}, #{@player_two.name} is #{@player_two.choice}."
+  end
+
+  def request_input(player)
+    puts "Where would you like to place your #{@active_player.choice}, #{@active_player.name}?"
+    number = gets.chomp.to_i
+    validate_input(number)
+    @board.modify_board(number, @active_player.choice)
+    check_for_victory(player)
+    clear_screen
+    @active_player = @active_player == @player_one ? @player_two : @player_one
+  end
+
+  def validate_input(number)
+    until @board.check_valid?(number)
+      clear_screen
+      @board.display_board
+      puts 'Invalid entry, enter a number from 1-9.'
+      number = gets.chomp.to_i
+    end
+    @board.modify_board(number, @active_player.choice)
+  end
+
+  def check_for_victory(player)
+    if @board.someone_won?
+      game_end(player, 'victory')
+    elsif @board.board_full?
+      game_end(player, 'draw')
+    end
+  end
+
+  def game_end(player, result)
+    case result
+    when 'victory'
+      clear_screen
+      puts "#{player.name} wins! Congratulations!"
+      play_again?
+    when 'draw'
+      clear_screen
+      puts "Looks like it's a draw!"
+      play_again?
+    end
+  end
+
+  def play_again?
+    @board.display_board
     puts 'Would you like to play again? (Y/N)'
-    yes_or_no = gets.chomp
-    case yes_or_no
-    when 'Y', 'y' then play_intro
-    when 'N', 'n' then exit
-    else play_again_invalid
+    choice = gets.chomp.upcase
+    case choice
+    when 'Y' then reset
+    when 'N' then exit
+    else play_again?
     end
   end
 
-  def play_again_invalid
-    puts 'Please enter either Y or N.'
-    play_again
-  end
-
-  def x_or_o_invalid(choice)
-    unless choice == 'O' || choice == 'X'
-      puts 'Please enter either O or X.'
-      decide_players
-    end
-  end
-
-  def decide_players
-    puts 'Player 1, please choose either O or X.'
-    goes_first = gets.chomp
-    x_or_o_invalid(goes_first)
-    goes_second = goes_first == 'X' ? 'O' : 'X'
-    sleep(0.5)
-    puts "Player 2, you will be #{goes_second} for this game."
-    create_board
-    play_game(goes_first, goes_second)
-  end
-
-  def play_game(first, second)
-    5.times do
-      request_choice(first, 'Player 1')
-      if @cells.any? { |number| (1..9).include?(number) } == true # keep on playing until @cells contains no numbers
-        request_choice(second, 'Player 2')
-      end
-    end
-    puts "It's a draw!"
-    play_again
+  def clear_screen
+    system 'clear'
   end
 end
 
 game = Game.new
-game.play_intro
-
-# winning combinations (horizontal): (0, 1, 2), (3, 4, 5), (6, 7, 8)
-# winning combinations (vertical):   (0, 3, 6), (1, 4, 7), (2, 5, 8)
-# winning combinations (diagonal):   (0, 4, 8), (2, 4, 6)
-
-# NOTE: look into play_again, and how the game calculates a draw
+game.start_game
